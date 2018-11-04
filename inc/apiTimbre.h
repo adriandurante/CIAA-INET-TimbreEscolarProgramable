@@ -11,6 +11,8 @@
 #define SALIDA_TIMBRE_TEORIA LED1	//GPIO4
 #define SALIDA_TIMBRE_TALLER LED3	//GPIO6
 
+#define CLAVE_ALMACENADA "1234"
+
 #define ACTIVADO 	TRUE
 #define DESACTIVADO FALSE
 
@@ -30,6 +32,7 @@
 #include "apiTimbre.h"
 #include "stdlib.h"
 #include "string.h"
+#include "debounce.h"
 
 enum {
 	TIMBRE_TEORIA = 1,
@@ -66,7 +69,8 @@ typedef enum {
 	ESTADO_INICIAL,
 	ESTADO_DETENIDO,
 	ESTADO_FUNCIONAMIENTO,
-	ESTADO_CONFIGURACION
+	ESTADO_CONFIGURACION,
+	INGRESO_CLAVE
 };
 
 typedef enum {

@@ -281,12 +281,12 @@ uint8_t apiConfigHardware( void ) {
 
 
 	/*rtc.year  = 2018;
-	rtc.month = 10;
-	rtc.mday  = 30;
-	rtc.wday  = 2;
-	rtc.hour  = 19;
-	rtc.min   = 0;
-	rtc.sec   = 50;
+	rtc.month = 11;
+	rtc.mday  = 5;
+	rtc.wday  = 1;
+	rtc.hour  = 16;
+	rtc.min   = 59;
+	rtc.sec   = 0;
 	rtcConfig (&rtc);*/
 
 
@@ -360,10 +360,13 @@ void apiActualizarInfoLCD(estadoTimbres_t *estadoTimbreTeoria, estadoTimbres_t *
 	static bool_t estadoSegundero = FALSE;
 	static estadoLCD_t estadoLCD = HORA_FECHA;
 
+	rtcRead( &rtc );
+
+	if ( !esFinDeSemana () && !esFeriado () ) {
+
 	switch ( estadoLCD ) {
 	case HORA_FECHA: tiempo++;
  					 if ( tiempo == 1 ) {
-					 rtcRead( &rtc );
 
 					pos=0;
 					cadenaFecha[pos++]  = ( rtc.mday / 10 ) 		+ '0';
@@ -491,7 +494,18 @@ void apiActualizarInfoLCD(estadoTimbres_t *estadoTimbreTeoria, estadoTimbres_t *
 						  }
 	}
 
-
+	}
+	else if ( esFinDeSemana () )
+	{
+		lcdClear(); 	   // Borrar la pantalla
+		lcdGoToXY( 1, 1 ); // Poner cursor en 1, 3
+		lcdSendStringRaw( "Fin de semana   " );
+	}
+	else {
+		lcdClear(); 	   // Borrar la pantalla
+		lcdGoToXY( 1, 1 ); // Poner cursor en 1, 3
+		lcdSendStringRaw( "Feriado         " );
+	}
 
 }
 

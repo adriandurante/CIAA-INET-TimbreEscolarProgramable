@@ -29,6 +29,7 @@ void tarea2( void* ptr );
 void tarea3( void* ptr );
 void tarea4( void* ptr );
 static void apiConfigKeypad(void);
+int8_t teclaToChar(uint16_t tecla);
 
 /*==================[funcion principal]======================================*/
 
@@ -122,9 +123,11 @@ void tarea4( void* ptr ){
 
 void actualizarEstadoMEF_Sistema ( void )
 {
-	static uint8_t estadoSistema = ESTADO_DETENIDO;
+	static uint8_t estadoActualSistema = ESTADO_DETENIDO, estadoAnteriorSistema;
+	static uint8_t claveIngresada[5];
 	// Variable para guardar la tecla leida
-	static uint16_t tecla = 0;
+	static uint16_t tecla = 0, contadorClave = 0;
+	static EstadoMefDebounce_t * estadoTecla;
 	// Teclado
 	// Filas --> Salidas
 			uint8_t keypadRowPins1[4] = { T_FIL0, // Row 0
@@ -142,44 +145,146 @@ void actualizarEstadoMEF_Sistema ( void )
 
 			keypadConfig(&keypad, keypadRowPins1, 4, keypadColPins1, 4);
 
-	switch ( estadoSistema )
+	switch ( estadoActualSistema )
 	{
 		case ESTADO_INICIAL:
 		break;
-		case ESTADO_DETENIDO: if ( keypadRead(&keypad, &tecla) ) {
-								if(tecla == 2) {
-									schedulerAddTask( tarea2, // funcion de tarea a a�adir
-												                     100,      // offset de ejecucion en ticks
-												                     1000     // periodicidad de ejecucion en ticks
-												                   );
-
-												   // Se agrega la tarea tarea2 al planificador
-												   schedulerAddTask( tarea3, 200, 1000 );
-
-												   // Se agrega la tarea tarea3 al planificador
-												   schedulerAddTask( tarea4, 300, 1000 );
-
-									estadoSistema = ESTADO_FUNCIONAMIENTO;
-								}
-		}
+		case ESTADO_DETENIDO: //leerKeypad(&keypad, &tecla);
+								debounceActualizarMefParametric(&estadoTecla, &tecla);
+								if (estadoTecla == BUTTON_RISING)
+									if(tecla == 12 ) {
+										estadoAnteriorSistema = estadoActualSistema;
+										estadoActualSistema = INGRESO_CLAVE;
+									}
+							// }
 		break;
-		case ESTADO_FUNCIONAMIENTO:  // Se agrega la tarea tarea1 al planificador
-			if ( keypadRead(&keypad, &tecla) ) {
-											if(tecla == 15){
-												schedulerDeleteTask( 1);
-																								   // Se agrega la tarea tarea2 al planificador
-											   schedulerDeleteTask( 2 );
-
-																								   // Se agrega la tarea tarea3 al planificador
-												schedulerDeleteTask( 3 );
-
-
-												estadoSistema = ESTADO_DETENIDO;
+		case ESTADO_FUNCIONAMIENTO:  //leerKeypad(&keypad, &tecla) ;
+										debounceActualizarMefParametric(&estadoTecla, &tecla);
+										if (estadoTecla == BUTTON_RISING) {
+											if(tecla == 12 ) {
+												estadoAnteriorSistema = estadoActualSistema;
+												estadoActualSistema = INGRESO_CLAVE;
 											}
-			}
+											if(tecla == 14 ) {
+												estadoAnteriorSistema = estadoActualSistema;
+												estadoActualSistema = INGRESO_CLAVE;
+											}
+									   }
+
 		break;
-	//	case ESTADO_CONFIGURACION:
+		case INGRESO_CLAVE:
+			//leerKeypad(&keypad, &tecla);
+				debounceActualizarMefParametric(&estadoTecla, &tecla);
+				if (estadoTecla == BUTTON_RISING){
+					claveIngresada[contadorClave++] = teclaToChar( tecla );
+
+				if ( contadorClave == 4 ) {
+					contadorClave = 0;
+					if ( !strcmp ( claveIngresada, CLAVE_ALMACENADA ) ) {
+
+						if ( estadoAnteriorSistema == ESTADO_DETENIDO) {
+
+							schedulerAddTask( tarea2, // funcion de tarea a a�adir
+									100,      // offset de ejecucion en ticks
+									1000     // periodicidad de ejecucion en ticks
+							);
+
+							// Se agrega la tarea tarea2 al planificador
+							schedulerAddTask( tarea3, 200, 1000 );
+
+							// Se agrega la tarea tarea3 al planificador
+							schedulerAddTask( tarea4, 300, 1000 );
+
+							estadoActualSistema = ESTADO_FUNCIONAMIENTO;
+						}
+						if ( estadoAnteriorSistema == ESTADO_FUNCIONAMIENTO) {
+							schedulerDeleteTask( 1 );
+							// Se agrega la tarea tarea2 al planificador
+							schedulerDeleteTask( 2 );
+							// Se agrega la tarea tarea3 al planificador
+							schedulerDeleteTask( 3 );
+
+
+							estadoActualSistema = ESTADO_DETENIDO;
+						}
+						if ( estadoAnteriorSistema == CONFIGURACION) {
+							schedulerDeleteTask( 1 );
+							// Se agrega la tarea tarea2 al planificador
+							schedulerDeleteTask( 2 );
+							// Se agrega la tarea tarea3 al planificador
+							schedulerDeleteTask( 3 );
+
+
+							estadoActualSistema = ESTADO_DETENIDO;
+						}
+
+					}
+					else
+						estadoActualSistema = estadoAnteriorSistema;
+			}
+
 	}
+
+	}
+}
+
+int8_t teclaToChar(uint16_t tecla) {
+
+	int8_t keypadToDesplayKeys[16] = { '1', '2', '3', 0x0a, '4', '5', '6', 0x0b, '7', '8', '9',
+				0x0c, 0x0e, '0', 0x0f, 0x0d };
+
+	return keypadToDesplayKeys[tecla];
+/*	switch (tecla) {
+	case 0:
+		return '1';
+		break;
+	case 1:
+		return '2';
+		break;
+	case 2:
+		return '3';
+		break;
+	case 3:
+		return 'A';
+		break;
+	case 4:
+		return '4';
+		break;
+	case 5:
+		return '5';
+		break;
+	case 6:
+		return '6';
+		break;
+	case 7:
+		return 'B';
+		break;
+	case 8:
+		return '7';
+		break;
+	case 9:
+		return '8';
+		break;
+	case 10:
+		return '9';
+		break;
+	case 11:
+		return 'C';
+		break;
+	case 12:
+		return '*';
+		break;
+	case 13:
+		return '0';
+		break;
+	case 14:
+		return '#';
+		break;
+	case 15:
+		return 'D';
+		break;
+
+	}*/
 }
 
 static void apiConfigKeypad(void){
