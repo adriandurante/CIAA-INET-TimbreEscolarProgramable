@@ -345,6 +345,15 @@ static void apiConfigLCD(void){
 
 }
 
+void apiActualizarInfoLCD_Detenido( void ){
+	lcdClear(); 	   // Borrar la pantalla
+	lcdGoToXY( 1, 1 ); // Poner cursor en 1, 3
+	lcdSendStringRaw( "Sistema detenido   " );
+	lcdGoToXY( 1, 3 ); // Poner cursor en 1, 3
+	lcdSendStringRaw( "A  Activar         " );
+	lcdGoToXY( 1, 4 ); // Poner cursor en 1, 4
+	lcdSendStringRaw( "C  Configurar      " );
+}
 
 void apiActualizarInfoLCD(estadoTimbres_t *estadoTimbreTeoria, estadoTimbres_t *estadoTimbreTaller )
 {

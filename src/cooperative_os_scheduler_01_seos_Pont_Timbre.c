@@ -28,6 +28,7 @@ void tarea1( void* ptr );
 void tarea2( void* ptr );
 void tarea3( void* ptr );
 void tarea4( void* ptr );
+void tarea5( void* ptr );
 static void apiConfigKeypad(void);
 int8_t teclaToChar(uint16_t tecla);
 
@@ -121,12 +122,16 @@ void tarea4( void* ptr ){
    apiActualizarInfoLCD(&estadoTimbreTeoria, &estadoTimbreTaller);
 }
 
+void tarea5( void* ptr ){
+   apiActualizarInfoLCD_Detenido( );
+}
+
 void actualizarEstadoMEF_Sistema ( void )
 {
-	static uint8_t estadoActualSistema = ESTADO_DETENIDO, estadoAnteriorSistema;
+	static uint8_t estadoActualSistema = ESTADO_INICIAL, indexTareaLCD_Detenido, indexTareaLCDFuncionamiento, indexTareaTimbreTaller, indexTareaTimbreTeoria;
 	static uint8_t claveIngresada[5];
 	// Variable para guardar la tecla leida
-	static uint16_t tecla = 0, contadorClave = 0;
+	static uint16_t tecla = 20, contadorClave = 0;
 	static EstadoMefDebounce_t * estadoTecla;
 	// Teclado
 	// Filas --> Salidas
@@ -147,83 +152,54 @@ void actualizarEstadoMEF_Sistema ( void )
 
 	switch ( estadoActualSistema )
 	{
-		case ESTADO_INICIAL:
+		case ESTADO_INICIAL: estadoActualSistema = ESTADO_DETENIDO;
+							 indexTareaLCD_Detenido = schedulerAddTask( tarea5, 300, 1000 );
 		break;
 		case ESTADO_DETENIDO: //leerKeypad(&keypad, &tecla);
 								debounceActualizarMefParametric(&estadoTecla, &tecla);
-								if (estadoTecla == BUTTON_RISING)
-									if(tecla == 12 ) {
-										estadoAnteriorSistema = estadoActualSistema;
-										estadoActualSistema = INGRESO_CLAVE;
+								if (estadoTecla == BUTTON_RISING) {
+									if( tecla == 3 ) {
+										schedulerDeleteTask( indexTareaLCD_Detenido );
+										indexTareaTimbreTeoria = schedulerAddTask( tarea2, // funcion de tarea a aï¿½adir
+												100,      // offset de ejecucion en ticks
+												1000     // periodicidad de ejecucion en ticks
+										);
+
+										// Se agrega la tarea tarea2 al planificador
+										indexTareaTimbreTaller = schedulerAddTask( tarea3, 200, 1000 );
+
+										// Se agrega la tarea tarea3 al planificador
+										indexTareaLCDFuncionamiento = schedulerAddTask( tarea4, 300, 1000 );
+
+										estadoActualSistema = ESTADO_FUNCIONAMIENTO;
 									}
-							// }
+									if( tecla == 11 ) {
+										estadoActualSistema = ESTADO_CONFIGURACION;
+									}
+							    }
 		break;
 		case ESTADO_FUNCIONAMIENTO:  //leerKeypad(&keypad, &tecla) ;
 										debounceActualizarMefParametric(&estadoTecla, &tecla);
 										if (estadoTecla == BUTTON_RISING) {
-											if(tecla == 12 ) {
-												estadoAnteriorSistema = estadoActualSistema;
-												estadoActualSistema = INGRESO_CLAVE;
+											if( tecla == 7 ) {
+												schedulerDeleteTask( indexTareaTimbreTeoria );
+												// Se agrega la tarea tarea2 al planificador
+												schedulerDeleteTask( indexTareaTimbreTaller );
+												// Se agrega la tarea tarea3 al planificador
+												schedulerDeleteTask( indexTareaLCDFuncionamiento );
+
+												indexTareaLCD_Detenido = schedulerAddTask( tarea5, 300, 1000 );
+												estadoActualSistema = ESTADO_DETENIDO;
 											}
-											if(tecla == 14 ) {
-												estadoAnteriorSistema = estadoActualSistema;
-												estadoActualSistema = INGRESO_CLAVE;
+											if(tecla == 11 ) {
+												// Se elimina la tarea tarea3 al planificador
+												schedulerDeleteTask( 3 );
+												estadoActualSistema = ESTADO_CONFIGURACION;
 											}
 									   }
 
 		break;
-		case INGRESO_CLAVE:
-			//leerKeypad(&keypad, &tecla);
-				debounceActualizarMefParametric(&estadoTecla, &tecla);
-				if (estadoTecla == BUTTON_RISING){
-					claveIngresada[contadorClave++] = teclaToChar( tecla );
-
-				if ( contadorClave == 4 ) {
-					contadorClave = 0;
-					if ( !strcmp ( claveIngresada, CLAVE_ALMACENADA ) ) {
-
-						if ( estadoAnteriorSistema == ESTADO_DETENIDO) {
-
-							schedulerAddTask( tarea2, // funcion de tarea a aï¿½adir
-									100,      // offset de ejecucion en ticks
-									1000     // periodicidad de ejecucion en ticks
-							);
-
-							// Se agrega la tarea tarea2 al planificador
-							schedulerAddTask( tarea3, 200, 1000 );
-
-							// Se agrega la tarea tarea3 al planificador
-							schedulerAddTask( tarea4, 300, 1000 );
-
-							estadoActualSistema = ESTADO_FUNCIONAMIENTO;
-						}
-						if ( estadoAnteriorSistema == ESTADO_FUNCIONAMIENTO) {
-							schedulerDeleteTask( 1 );
-							// Se agrega la tarea tarea2 al planificador
-							schedulerDeleteTask( 2 );
-							// Se agrega la tarea tarea3 al planificador
-							schedulerDeleteTask( 3 );
-
-
-							estadoActualSistema = ESTADO_DETENIDO;
-						}
-						if ( estadoAnteriorSistema == CONFIGURACION) {
-							schedulerDeleteTask( 1 );
-							// Se agrega la tarea tarea2 al planificador
-							schedulerDeleteTask( 2 );
-							// Se agrega la tarea tarea3 al planificador
-							schedulerDeleteTask( 3 );
-
-
-							estadoActualSistema = ESTADO_DETENIDO;
-						}
-
-					}
-					else
-						estadoActualSistema = estadoAnteriorSistema;
-			}
-
-	}
+		case ESTADO_CONFIGURACION : ;
 
 	}
 }
@@ -291,7 +267,60 @@ static void apiConfigKeypad(void){
 	/* Configuracion de pines para el Teclado Matricial*/
 
 
+/*INGRESO_CLAVE:
+			//leerKeypad(&keypad, &tecla);
+				debounceActualizarMefParametric(&estadoTecla, &tecla);
+				if (estadoTecla == BUTTON_RISING){
+					claveIngresada[contadorClave++] = teclaToChar( tecla );
 
+				if ( contadorClave == 4 ) {
+					contadorClave = 0;
+					if ( !strcmp ( claveIngresada, CLAVE_ALMACENADA ) ) {
+
+						if ( estadoAnteriorSistema == ESTADO_DETENIDO) {
+
+							schedulerAddTask( tarea2, // funcion de tarea a añadir
+									100,      // offset de ejecucion en ticks
+									1000     // periodicidad de ejecucion en ticks
+							);
+
+							// Se agrega la tarea tarea2 al planificador
+							schedulerAddTask( tarea3, 200, 1000 );
+
+							// Se agrega la tarea tarea3 al planificador
+							schedulerAddTask( tarea4, 300, 1000 );
+
+							estadoActualSistema = ESTADO_FUNCIONAMIENTO;
+						}
+						if ( estadoAnteriorSistema == ESTADO_FUNCIONAMIENTO) {
+							schedulerDeleteTask( 1 );
+							// Se agrega la tarea tarea2 al planificador
+							schedulerDeleteTask( 2 );
+							// Se agrega la tarea tarea3 al planificador
+							schedulerDeleteTask( 3 );
+
+
+							estadoActualSistema = ESTADO_DETENIDO;
+						}
+						if ( estadoAnteriorSistema == CONFIGURACION) {
+							schedulerDeleteTask( 1 );
+							// Se agrega la tarea tarea2 al planificador
+							schedulerDeleteTask( 2 );
+							// Se agrega la tarea tarea3 al planificador
+							schedulerDeleteTask( 3 );
+
+
+							estadoActualSistema = ESTADO_DETENIDO;
+						}
+
+					}
+					else
+						estadoActualSistema = estadoAnteriorSistema;
+			}
+
+	}
+
+	}*/
 
 
 }

@@ -69,8 +69,12 @@ typedef enum {
 	ESTADO_INICIAL,
 	ESTADO_DETENIDO,
 	ESTADO_FUNCIONAMIENTO,
-	ESTADO_CONFIGURACION,
-	INGRESO_CLAVE
+	ESTADO_CONFIGURACION
+};
+
+typedef enum {
+	ESPERANDO_CLAVE,
+	INGRESANDO_CLAVE
 };
 
 typedef enum {
@@ -102,6 +106,7 @@ bool_t esFeriado ( void );
 uint8_t apiConfigHardware ( void );
 void EjecutarBootloader ( void );
 void apiActualizarInfoLCD( estadoTimbres_t*, estadoTimbres_t* );
+void apiActualizarInfoLCD_Detenido( void );
 void leerDatosSD ( void );
 
 
