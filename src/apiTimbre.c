@@ -1,11 +1,10 @@
 #include <apiTimbre.h>
-#define FILENAME "timbres.dat"
+#define FILENAME_TIMBRES  "timbres.dat"
+#define FILENAME_FERIADOS "feriados.dat"
 
 static estructuraHorarios_t timbresEscuela[50];
 
-static fecha_t feriados[] = {{24,  3},
-							 {12, 10},
-							 { 8, 12}};
+static estructuraFeriados_t feriadosEscuela[20];
 
 // Caracter personalizado carita feliz :)
 const char smile[8] = {
@@ -252,13 +251,14 @@ bool_t esFeriado ( void )
 	bool_t esFeriado = FALSE;
 	rtc_t rtc;
 
+	rtcRead ( &rtc );
 	dia = rtc.mday;
 	mes = rtc.month;
 
-	cantFer = sizeof (feriados);
+	cantFer = sizeof (feriadosEscuela) / sizeof ( estructuraFeriados_t);
 
 	for ( indFer = 0 ; indFer < cantFer ; indFer++ )
-		if ( dia == feriados[indFer].dia && mes == feriados[indFer].mes )
+		if ( dia == feriadosEscuela[indFer].fecha.dia && mes == feriadosEscuela[indFer].fecha.mes )
 			esFeriado = TRUE;
 
 	return esFeriado;
@@ -280,14 +280,14 @@ uint8_t apiConfigHardware( void ) {
 	//dht11Config();
 
 
-	/*rtc.year  = 2018;
+	rtc.year  = 2018;
 	rtc.month = 11;
 	rtc.mday  = 5;
 	rtc.wday  = 1;
-	rtc.hour  = 16;
-	rtc.min   = 59;
+	rtc.hour  = 7;
+	rtc.min   = 44;
 	rtc.sec   = 0;
-	rtcConfig (&rtc);*/
+	rtcConfig (&rtc);
 
 
 //	apiConfigServer();
@@ -535,7 +535,7 @@ void leerDatosSD ( void )
 
 
 		// FA_CREATE_ALWAYS se sobreescribe el archivo. FA_OPEN_APPEND el nuevo contenido se escribe al final.
-		if( f_open( &File, FILENAME, FA_OPEN_EXISTING | FA_READ ) == FR_OK ){
+		if( f_open( &File, FILENAME_TIMBRES, FA_OPEN_EXISTING | FA_READ ) == FR_OK ){
 			// Escribe en el archivo abierto el texto "Hola mundo\n\r".
 			f_read( &File, z, 1024, &bytesRead );
 			// Una vez que escribio cierra el archivo.
@@ -554,8 +554,6 @@ void leerDatosSD ( void )
 		f=0;
 
 		while ( z[i] != EOF && i < 516 )
-
-		//for (i=0 ; i < 48; i++ )
 		{
 			z1[j] = z[i];
 			j++;
@@ -593,5 +591,61 @@ void leerDatosSD ( void )
 
 			i++;
 		}
+
+
+		// FA_CREATE_ALWAYS se sobreescribe el archivo. FA_OPEN_APPEND el nuevo contenido se escribe al final.
+				if( f_open( &File, FILENAME_FERIADOS, FA_OPEN_EXISTING | FA_READ ) == FR_OK ){
+					// Escribe en el archivo abierto el texto "Hola mundo\n\r".
+					f_read( &File, z, 1024, &bytesRead );
+					// Una vez que escribio cierra el archivo.
+					f_close(&File);
+					// Chequea si los bytes escritos son iguales a los que se pidio escribir.
+					if( bytesRead == 1024 ){
+						// Si salio todo bien prende el LED verde
+						gpioWrite( LEDG, ON );
+					}
+				} else{
+					// Si la operacion fallo prende el LED rojo.
+					gpioWrite( LEDR, ON );
+				}
+
+				i=0;
+				f=0;
+				j=0;
+				coma = 0;
+
+				while ( z[i] != EOF && i < 516 )
+				{
+					z1[j] = z[i];
+					j++;
+
+					if( z[i] == ',' || z[i] == ';')
+					{
+						z1[j-1] = 0;
+						j=0;
+						coma++;
+
+						if ( 1 == coma )
+						{
+							feriadosEscuela[f].fecha.dia = strtol (z1, NULL, 10);
+						}
+						if (coma == 2)
+						{
+							feriadosEscuela[f].fecha.mes = strtol (z1, NULL, 10);
+						}
+					}
+
+					if ( z[i] == 13 || z[i] == 10)
+					{
+						z1[j-1] = 0;
+						j = 0;
+						strcpy( feriadosEscuela[f].descripcion, z1 );
+						f++;
+						if(z[i] == 10) i++;
+						if(z[i] == 13) i++;
+					}
+
+					i++;
+				}
 
 }

@@ -65,6 +65,11 @@ typedef struct {
 	uint8_t mes;
 } fecha_t;
 
+typedef struct {
+	fecha_t fecha;
+	int8_t descripcion[40];
+}estructuraFeriados_t;
+
 typedef enum {
 	ESTADO_INICIAL,
 	ESTADO_DETENIDO,
