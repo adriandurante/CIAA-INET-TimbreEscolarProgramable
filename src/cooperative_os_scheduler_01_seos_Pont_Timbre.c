@@ -133,22 +133,23 @@ void actualizarEstadoMEF_Sistema ( void )
 	// Variable para guardar la tecla leida
 	static uint16_t tecla = 20, contadorClave = 0;
 	static EstadoMefDebounce_t * estadoTecla;
+
 	// Teclado
 	// Filas --> Salidas
-			uint8_t keypadRowPins1[4] = { T_FIL0, // Row 0
-					T_FIL1,    // Row 1
-					T_FIL2,    // Row 2
-					T_FIL3     // Row 3
-					};
+	uint8_t keypadRowPins1[4] = { T_FIL0, 	 // Row 0
+  								  T_FIL1,    // Row 1
+								  T_FIL2,    // Row 2
+								  T_FIL3     // Row 3
+								};
 
-			// Columnas --> Entradas con pull-up (MODO = GPIO_INPUT_PULLUP)
-			uint8_t keypadColPins1[4] = { T_COL0,    // Column 0
-					T_COL1,    // Column 1
-					T_COL2,    // Column 2
-					CAN_TD     // Column 3
-					};
+	// Columnas --> Entradas con pull-up (MODO = GPIO_INPUT_PULLUP)
+	uint8_t keypadColPins1[4] = { T_COL0,    // Column 0
+								  T_COL1,    // Column 1
+								  T_COL2,    // Column 2
+								  CAN_TD     // Column 3
+								};
 
-			keypadConfig(&keypad, keypadRowPins1, 4, keypadColPins1, 4);
+	keypadConfig(&keypad, keypadRowPins1, 4, keypadColPins1, 4);
 
 	switch ( estadoActualSistema )
 	{
@@ -179,24 +180,24 @@ void actualizarEstadoMEF_Sistema ( void )
 							    }
 		break;
 		case ESTADO_FUNCIONAMIENTO:  //leerKeypad(&keypad, &tecla) ;
-										debounceActualizarMefParametric(&estadoTecla, &tecla);
-										if (estadoTecla == BUTTON_RISING) {
-											if( tecla == 7 ) {
-												schedulerDeleteTask( indexTareaTimbreTeoria );
-												// Se agrega la tarea tarea2 al planificador
-												schedulerDeleteTask( indexTareaTimbreTaller );
-												// Se agrega la tarea tarea3 al planificador
-												schedulerDeleteTask( indexTareaLCDFuncionamiento );
+									debounceActualizarMefParametric(&estadoTecla, &tecla);
+									if (estadoTecla == BUTTON_RISING) {
+										if( tecla == 7 ) {
+											schedulerDeleteTask( indexTareaTimbreTeoria );
+											// Se agrega la tarea tarea2 al planificador
+											schedulerDeleteTask( indexTareaTimbreTaller );
+											// Se agrega la tarea tarea3 al planificador
+											schedulerDeleteTask( indexTareaLCDFuncionamiento );
 
-												indexTareaLCD_Detenido = schedulerAddTask( tarea5, 300, 1000 );
-												estadoActualSistema = ESTADO_DETENIDO;
-											}
-											if(tecla == 11 ) {
-												// Se elimina la tarea tarea3 al planificador
-												schedulerDeleteTask( 3 );
-												estadoActualSistema = ESTADO_CONFIGURACION;
-											}
-									   }
+											indexTareaLCD_Detenido = schedulerAddTask( tarea5, 300, 1000 );
+											estadoActualSistema = ESTADO_DETENIDO;
+										}
+										if(tecla == 11 ) {
+											// Se elimina la tarea tarea3 al planificador
+											schedulerDeleteTask( 3 );
+											estadoActualSistema = ESTADO_CONFIGURACION;
+										}
+								   }
 
 		break;
 		case ESTADO_CONFIGURACION : ;

@@ -280,14 +280,14 @@ uint8_t apiConfigHardware( void ) {
 	//dht11Config();
 
 
-	rtc.year  = 2018;
+	/*rtc.year  = 2018;
 	rtc.month = 11;
-	rtc.mday  = 5;
+	rtc.mday  = 12;
 	rtc.wday  = 1;
-	rtc.hour  = 7;
-	rtc.min   = 44;
+	rtc.hour  = 9;
+	rtc.min   = 10;
 	rtc.sec   = 0;
-	rtcConfig (&rtc);
+	rtcConfig (&rtc);*/
 
 
 //	apiConfigServer();
@@ -524,8 +524,9 @@ void leerDatosSD ( void )
 	static FATFS FileSystem;  	// <-- FatFs work area needed for each volume
 	static FIL   File;          // <-- File object needed for each open file
 	UINT bytesRead = 0, coma = 0, i, j=0, f;
+	uint8_t tiempoTimbre;
 
-	BYTE z1[48], z[1024];
+	BYTE z1[256], z[1024];
 
 
 		// Monta el sistema de archivos
@@ -574,7 +575,13 @@ void leerDatosSD ( void )
 				}
 				if (coma == 3)
 				{
-					timbresEscuela[f].tiempoDuracion = strtol (z1, NULL, 10);
+					tiempoTimbre = strtol (z1, NULL, 10);
+					if ( tiempoTimbre == 1 )
+						timbresEscuela[f].tiempoDuracion = TIEMPO_DURACION_TIMBRE_LARGO;
+					if ( tiempoTimbre == 2 )
+						timbresEscuela[f].tiempoDuracion = TIEMPO_DURACION_TIMBRE_MEDIO;
+					if ( tiempoTimbre == 3 )
+						timbresEscuela[f].tiempoDuracion = TIEMPO_DURACION_TIMBRE_CORTO;
 					coma=0;
 				}
 			}
@@ -614,7 +621,7 @@ void leerDatosSD ( void )
 				j=0;
 				coma = 0;
 
-				while ( z[i] != EOF && i < 516 )
+				while ( z[i] != EOF && i < 300 )
 				{
 					z1[j] = z[i];
 					j++;
